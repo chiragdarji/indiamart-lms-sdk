@@ -355,7 +355,7 @@ export class IndiaMartSDK {
           message: result.message,
           totalRecords: result.totalRecords,
           leads: result.leads || [],
-          raw: result.raw,
+          raw: result, // Include the full processed result as raw data
           downloadPath: downloadPath,
           compliance: compliance
         };
