@@ -1,6 +1,6 @@
 {
   "name": "indiamart-lms-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple and powerful SDK for IndiaMART Lead Management System (LMS) - Get leads with just your CRM key",
   "main": "src/index.js",
   "type": "module",
