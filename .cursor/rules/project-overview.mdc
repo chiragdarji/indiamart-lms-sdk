@@ -1,0 +1,75 @@
+---
+alwaysApply: true
+description: Project overview and key information
+---
+
+# IndiaMART LMS CRM Integration v2 - Project Overview
+
+## Project Status
+✅ **PRODUCTION READY** - Fully functional IndiaMART integration with AI quote management capabilities
+
+## Key Features
+- **IndiaMART API Integration**: Complete v2 API client with compliance
+- **Rate Limiting**: 15-minute intervals, 5 calls/minute, 15-minute blocking
+- **Error Handling**: Comprehensive error classification and retry logic
+- **Date Formatting**: IST timezone support with DD-MON-YYYY and DD-MM-YYYYHH:MM:SS formats
+- **Polling Service**: Automated lead fetching with Strategy 1 & 2
+- **AI Integration**: Ready for quote management and lead scoring
+- **AWS Ready**: Serverless architecture with DynamoDB, ElastiCache, Lambda, SageMaker
+
+## Project Structure
+- **Source**: [src/](mdc:src/) - Core modules (8 files)
+- **Tests**: [tests/](mdc:tests/) - Comprehensive test suite (5 files)
+- **Examples**: [examples/](mdc:examples/) - Ready-to-run applications (4 files)
+- **Documentation**: [docs/](mdc:docs/) - Complete guides and structure
+
+## Quick Start
+```bash
+# Install dependencies
+npm install
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your IndiaMART CRM key
+
+# Run basic example
+npm start
+
+# Run all tests
+npm test
+
+# Start polling service
+npm run poll
+```
+
+## Key Commands
+- `npm start` - Basic usage example
+- `npm test` - Unit tests
+- `npm run test:compliance` - Compliance tests
+- `npm run test:response` - Response processing tests
+- `npm run poll` - Start polling service
+- `npm run monitor` - Check service status
+
+## Architecture
+- **Development**: SQLite + File System
+- **Production**: Redis + PostgreSQL
+- **AWS**: DynamoDB + ElastiCache + Lambda + SageMaker
+
+## Compliance
+- ✅ IndiaMART API rate limiting
+- ✅ Date format compliance (IST timezone)
+- ✅ Error handling for all API codes
+- ✅ Data validation and cleaning
+- ✅ Comprehensive logging and monitoring
+
+## AI Integration Ready
+- Lead scoring and classification
+- Quote recommendation system
+- Customer segmentation
+- Sentiment analysis
+- Predictive analytics
+
+## Documentation
+- [README.md](mdc:README.md) - Complete documentation
+- [PROJECT_STRUCTURE.md](mdc:PROJECT_STRUCTURE.md) - Structure guide
+- [.cursor/rules/](mdc:.cursor/rules/) - Cursor rules for development

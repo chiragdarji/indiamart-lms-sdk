@@ -1,0 +1,118 @@
+---
+globs: *.js,*.yml,*.yaml,*.json
+description: AWS architecture and deployment guidelines
+---
+
+# AWS Architecture Guidelines
+
+## Recommended AWS Services
+
+### Core Storage Stack
+- **DynamoDB**: Primary data store for leads and API tracking
+- **ElastiCache (Redis)**: Rate limiting and caching
+- **S3**: Data lake, backups, and exports
+- **Lambda**: Serverless compute for API calls and processing
+
+### AI/ML Services
+- **SageMaker**: ML model training and deployment
+- **Bedrock**: Generative AI for quote generation
+- **Comprehend**: Natural language processing
+- **Personalize**: Recommendation engine
+
+### Monitoring & Security
+- **CloudWatch**: Monitoring and logging
+- **CloudTrail**: Audit logging
+- **IAM**: Access control
+- **KMS**: Encryption key management
+
+## Serverless Architecture Patterns
+
+### API Gateway + Lambda Pattern
+```javascript
+// API Gateway configuration
+const apiGateway = {
+  restApiId: 'indiamart-api',
+  stageName: 'prod',
+  rateLimit: {
+    requestsPerSecond: 10,
+    burstLimit: 20
+  }
+};
+
+// Lambda function structure
+exports.handler = async (event) => {
+  try {
+    // Process request
+    const result = await processRequest(event);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(result)
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
+```
+
+### Event-Driven Architecture
+- Use EventBridge for decoupled processing
+- Implement SQS/SNS for message queuing
+- Use DynamoDB Streams for real-time updates
+- Leverage Step Functions for complex workflows
+
+## Data Storage Patterns
+
+### DynamoDB Design
+```javascript
+// Table design for leads
+const leadsTable = {
+  TableName: 'IndiaMartLeads',
+  KeySchema: [
+    { AttributeName: 'PK', KeyType: 'HASH' },
+    { AttributeName: 'SK', KeyType: 'RANGE' }
+  ],
+  GlobalSecondaryIndexes: [
+    {
+      IndexName: 'GSI1',
+      KeySchema: [
+        { AttributeName: 'GSI1PK', KeyType: 'HASH' },
+        { AttributeName: 'GSI1SK', KeyType: 'RANGE' }
+      ]
+    }
+  ]
+};
+```
+
+### S3 Data Lake Structure
+```
+s3://your-bucket/
+├── raw-data/
+│   ├── leads/
+│   │   ├── 2024/09/05/leads.json
+│   │   └── 2024/09/06/leads.json
+├── processed-data/
+│   ├── features/
+│   └── training-data/
+└── models/
+    ├── lead-scoring/
+    └── quote-recommendation/
+```
+
+## Cost Optimization
+
+- Use DynamoDB On-Demand for variable workloads
+- Implement S3 Intelligent Tiering
+- Use Spot Instances for SageMaker training
+- Set up CloudWatch billing alerts
+- Implement auto-scaling policies
+
+## Security Best Practices
+
+- Use IAM roles with least privilege
+- Enable encryption at rest and in transit
+- Implement VPC for network isolation
+- Use AWS Secrets Manager for API keys
+- Enable CloudTrail for audit logging

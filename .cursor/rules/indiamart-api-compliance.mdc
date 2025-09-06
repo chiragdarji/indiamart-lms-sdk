@@ -1,0 +1,61 @@
+---
+globs: *.js
+description: IndiaMART API compliance and best practices
+---
+
+# IndiaMART API Compliance Rules
+
+## Rate Limiting Requirements
+
+- **Minimum Interval**: 15 minutes between consecutive API calls
+- **Recommended Interval**: Every 2 hours for production
+- **Rate Limit**: Maximum 5 calls per minute
+- **Blocking**: 15-minute block if limits exceeded
+
+## Date Format Requirements
+
+- **Date Format**: `DD-MON-YYYY` (e.g., `25-JAN-2022`)
+- **Timestamp Format**: `DD-MM-YYYYHH:MM:SS` (e.g., `25-01-2022 16:30:00`)
+- **Time Zone**: IST (UTC+05:30) - critical for accuracy
+- **Validation**: Always validate date ranges (7-day max, 365-day historical limit)
+
+## API Call Tracking
+
+Always implement proper API call tracking to prevent rate limit violations:
+
+```javascript
+// Store last call time in Redis/DynamoDB
+const lastCallKey = 'indiamart:last_call';
+const rateLimitKey = 'indiamart:rate_limit_reset';
+
+// Check before making API calls
+const canMakeCall = await checkRateLimit(lastCallKey, rateLimitKey);
+if (!canMakeCall) {
+  throw new Error('Rate limit exceeded. Wait before next call.');
+}
+```
+
+## Error Handling
+
+Implement comprehensive error handling for all IndiaMART API error codes:
+
+- **400**: Invalid date format or parameters
+- **401**: Invalid CRM key
+- **403**: Access denied
+- **404**: No data found
+- **429**: Rate limit exceeded
+- **500**: Server error
+
+## Data Validation
+
+- Validate all input parameters before API calls
+- Clean special characters in lead messages
+- Ensure proper URL encoding (use `+` for spaces, not `%20`)
+- Implement retry logic with exponential backoff
+
+## Compliance Monitoring
+
+- Log all API calls with timestamps
+- Monitor rate limit usage
+- Set up alerts for API failures
+- Track success/failure rates

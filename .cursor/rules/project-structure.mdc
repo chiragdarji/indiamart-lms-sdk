@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+description: Project structure and organization guidelines
+---
+
+# IndiaMART Integration Project Structure
+
+This is a Node.js project for IndiaMART LMS CRM Integration v2 with AI-based quote management capabilities.
+
+## Project Organization
+
+- **Source Code**: [src/](mdc:src/) - Core application modules
+  - [src/index.js](mdc:src/index.js) - Main entry point exporting all components
+  - [src/indiamart-client.js](mdc:src/indiamart-client.js) - Core API client
+  - [src/response-handler.js](mdc:src/response-handler.js) - Response processing
+  - [src/api-compliance.js](mdc:src/api-compliance.js) - Rate limiting and compliance
+  - [src/error-handler.js](mdc:src/error-handler.js) - Error handling and classification
+  - [src/polling-service.js](mdc:src/polling-service.js) - Automated lead fetching
+  - [src/polling-config.js](mdc:src/polling-config.js) - Configuration management
+  - [src/types.d.ts](mdc:src/types.d.ts) - TypeScript definitions
+
+- **Tests**: [tests/](mdc:tests/) - Comprehensive test suite
+  - [tests/test.js](mdc:tests/test.js) - Unit tests
+  - [tests/compliance-test.js](mdc:tests/compliance-test.js) - Compliance tests
+  - [tests/date-format-test.js](mdc:tests/date-format-test.js) - Date format tests
+  - [tests/error-test.js](mdc:tests/error-test.js) - Error handling tests
+  - [tests/response-example.js](mdc:tests/response-example.js) - Response processing tests
+
+- **Examples**: [examples/](mdc:examples/) - Ready-to-run applications
+  - [examples/example.js](mdc:examples/example.js) - Basic usage example
+  - [examples/polling-example.js](mdc:examples/polling-example.js) - Polling service demo
+  - [examples/start-polling.js](mdc:examples/start-polling.js) - CLI polling launcher
+  - [examples/monitor-polling.js](mdc:examples/monitor-polling.js) - Service monitoring
+
+- **Documentation**: [docs/](mdc:docs/) - Project documentation
+  - [README.md](mdc:README.md) - Main documentation
+  - [PROJECT_STRUCTURE.md](mdc:PROJECT_STRUCTURE.md) - Structure guide
+
+## Key Configuration Files
+
+- [package.json](mdc:package.json) - Project configuration and scripts
+- [.env](mdc:.env) - Environment variables (not in git)
+- [.env.example](mdc:.env.example) - Environment template
+- [.gitignore](mdc:.gitignore) - Git ignore rules
+
+## Import Patterns
+
+- From root: `import { IndiaMartClient } from './src/indiamart-client.js'`
+- From src/: `import { IndiaMartClient } from './indiamart-client.js'`
+- Main entry: `import { IndiaMartClient } from './src/index.js'`

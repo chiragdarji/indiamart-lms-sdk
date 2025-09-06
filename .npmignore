@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Logs and data
+logs/
+data/
+downloads/
+*.log
+*.db
+
+# Test files
+test-time.js
+tests/
+
+# Development documentation
+LEAD_STORAGE_ANALYSIS.md
+PACKAGE_SCRIPTS_CLEANUP.md
+PROJECT_STRUCTURE.md
+PROWONIX_PATTERN.md
+SQLITE_INTEGRATION.md
+TWO_STEP_PROCESS.md
+docs/
+
+# Scripts
+scripts/
+
+# Development files
+*.md
+!README.md
+!LICENSE
+
+# Git
+.git/
+.gitignore
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/

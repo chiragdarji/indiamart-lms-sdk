@@ -1,0 +1,185 @@
+---
+globs: *.js,*.py,*.json
+description: AI/ML integration guidelines for quote management
+---
+
+# AI Integration Guidelines
+
+## Data Schema for AI Processing
+
+### Lead Data Structure
+```javascript
+const aiLeadSchema = {
+  // Basic lead data
+  lead_id: String,
+  timestamp: Date,
+  customer_info: {
+    name: String,
+    company: String,
+    location: String,
+    industry: String,
+    contact_method: String
+  },
+  
+  // AI features
+  ai_features: {
+    lead_score: Number,        // 0-100 lead quality score
+    customer_segment: String,  // SMB, Enterprise, etc.
+    predicted_value: Number,   // Expected deal value
+    urgency_level: String,     // High, Medium, Low
+    best_contact_time: String, // Optimal contact time
+    sentiment: String,         // Positive, Neutral, Negative
+    intent_score: Number       // 0-100 purchase intent
+  },
+  
+  // Quote management
+  quote_history: [{
+    quote_id: String,
+    amount: Number,
+    status: String,            // Sent, Viewed, Accepted, Rejected
+    created_at: Date,
+    ai_recommendations: {
+      suggested_amount: Number,
+      confidence: Number,
+      reasoning: String
+    }
+  }]
+};
+```
+
+## AI Model Integration
+
+### SageMaker Integration
+```javascript
+// Lead scoring model
+const leadScoringEndpoint = {
+  EndpointName: 'lead-scoring-endpoint',
+  EndpointConfigName: 'lead-scoring-config',
+  ProductionVariants: [{
+    VariantName: 'primary',
+    ModelName: 'lead-scoring-model',
+    InitialInstanceCount: 1,
+    InstanceType: 'ml.t2.medium'
+  }]
+};
+
+// Quote recommendation model
+const quoteRecommendationEndpoint = {
+  EndpointName: 'quote-recommendation-endpoint',
+  EndpointConfigName: 'quote-recommendation-config',
+  ProductionVariants: [{
+    VariantName: 'primary',
+    ModelName: 'quote-recommendation-model',
+    InitialInstanceCount: 1,
+    InstanceType: 'ml.m5.large'
+  }]
+};
+```
+
+### Data Export Formats
+- **JSON**: Real-time API responses
+- **CSV**: Batch processing and analysis
+- **Parquet**: ML model training
+- **API Endpoints**: Real-time AI system integration
+
+## Feature Engineering
+
+### Lead Scoring Features
+```javascript
+const leadFeatures = {
+  // Temporal features
+  hour_of_day: Number,
+  day_of_week: Number,
+  month: Number,
+  
+  // Customer features
+  company_size: String,
+  industry_category: String,
+  location_tier: String,
+  
+  // Behavioral features
+  response_time: Number,
+  follow_up_count: Number,
+  engagement_score: Number,
+  
+  // Content features
+  message_length: Number,
+  keyword_density: Number,
+  sentiment_score: Number
+};
+```
+
+### Quote Recommendation Features
+```javascript
+const quoteFeatures = {
+  // Historical data
+  avg_deal_size: Number,
+  success_rate: Number,
+  customer_lifetime_value: Number,
+  
+  // Market features
+  market_segment: String,
+  competitive_landscape: String,
+  seasonal_factor: Number,
+  
+  // Lead features
+  lead_score: Number,
+  urgency_level: String,
+  budget_indicator: String
+};
+```
+
+## AI Workflow Integration
+
+### Real-time Processing
+1. **Lead Ingestion**: IndiaMART API → Lambda → DynamoDB
+2. **Feature Extraction**: Lambda → SageMaker → Lead Scoring
+3. **Quote Generation**: SageMaker → Quote Recommendation
+4. **Response**: Lambda → API Gateway → Client
+
+### Batch Processing
+1. **Data Collection**: S3 → Glue → Feature Store
+2. **Model Training**: SageMaker → Model Registry
+3. **Model Deployment**: SageMaker → Endpoint
+4. **Monitoring**: CloudWatch → Model Performance
+
+## Performance Optimization
+
+### Caching Strategy
+- Cache model predictions for 1 hour
+- Use ElastiCache for frequently accessed data
+- Implement model versioning for A/B testing
+
+### Cost Optimization
+- Use Spot Instances for training
+- Implement auto-scaling for endpoints
+- Use batch inference for non-real-time predictions
+- Monitor and optimize model performance
+
+## Monitoring and Alerting
+
+### Model Performance Metrics
+- Prediction accuracy
+- Response time
+- Error rate
+- Data drift detection
+
+### Business Metrics
+- Lead conversion rate
+- Quote acceptance rate
+- Revenue impact
+- Customer satisfaction
+
+## Data Privacy and Security
+
+### Data Protection
+- Encrypt sensitive data at rest and in transit
+- Implement data anonymization for training
+- Use IAM roles for model access
+- Audit all data access and model usage
+
+### Compliance
+- GDPR compliance for EU customers
+- Data retention policies
+- Right to deletion
+- Consent management

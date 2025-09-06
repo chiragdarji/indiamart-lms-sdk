@@ -1,0 +1,400 @@
+---
+globs: *.js,*.json
+description: Performance optimization guidelines
+---
+
+# Performance Optimization Guidelines
+
+## API Performance
+
+### Rate Limiting Optimization
+```javascript
+// Implement intelligent rate limiting
+class RateLimiter {
+  constructor(callsPerMinute = 5, callsPerHour = 20) {
+    this.callsPerMinute = callsPerMinute;
+    this.callsPerHour = callsPerHour;
+    this.minuteWindow = [];
+    this.hourWindow = [];
+  }
+  
+  async canMakeCall() {
+    const now = Date.now();
+    
+    // Clean old entries
+    this.minuteWindow = this.minuteWindow.filter(time => now - time < 60000);
+    this.hourWindow = this.hourWindow.filter(time => now - time < 3600000);
+    
+    // Check limits
+    if (this.minuteWindow.length >= this.callsPerMinute) {
+      return false;
+    }
+    
+    if (this.hourWindow.length >= this.callsPerHour) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  recordCall() {
+    const now = Date.now();
+    this.minuteWindow.push(now);
+    this.hourWindow.push(now);
+  }
+}
+```
+
+### Caching Strategy
+```javascript
+// Multi-level caching
+class CacheManager {
+  constructor() {
+    this.memoryCache = new Map();
+    this.redisCache = null; // Redis client
+    this.cacheTTL = {
+      leads: 300000,      // 5 minutes
+      apiStatus: 60000,   // 1 minute
+      userData: 3600000   // 1 hour
+    };
+  }
+  
+  async get(key, type = 'leads') {
+    // Check memory cache first
+    if (this.memoryCache.has(key)) {
+      const cached = this.memoryCache.get(key);
+      if (Date.now() - cached.timestamp < this.cacheTTL[type]) {
+        return cached.data;
+      }
+      this.memoryCache.delete(key);
+    }
+    
+    // Check Redis cache
+    if (this.redisCache) {
+      const cached = await this.redisCache.get(key);
+      if (cached) {
+        const data = JSON.parse(cached);
+        this.memoryCache.set(key, {
+          data: data,
+          timestamp: Date.now()
+        });
+        return data;
+      }
+    }
+    
+    return null;
+  }
+  
+  async set(key, data, type = 'leads') {
+    const cacheEntry = {
+      data: data,
+      timestamp: Date.now()
+    };
+    
+    // Store in memory cache
+    this.memoryCache.set(key, cacheEntry);
+    
+    // Store in Redis cache
+    if (this.redisCache) {
+      await this.redisCache.setex(key, this.cacheTTL[type] / 1000, JSON.stringify(data));
+    }
+  }
+}
+```
+
+## Database Performance
+
+### DynamoDB Optimization
+```javascript
+// Optimize DynamoDB queries
+class DynamoDBOptimizer {
+  constructor(dynamodb) {
+    this.dynamodb = dynamodb;
+  }
+  
+  // Use batch operations for multiple items
+  async batchWriteItems(items, tableName) {
+    const chunks = this.chunkArray(items, 25); // DynamoDB batch limit
+    
+    for (const chunk of chunks) {
+      const params = {
+        RequestItems: {
+          [tableName]: chunk.map(item => ({
+            PutRequest: { Item: item }
+          }))
+        }
+      };
+      
+      await this.dynamodb.batchWrite(params).promise();
+    }
+  }
+  
+  // Use projection expressions to limit data transfer
+  async getLeadsWithProjection(keys, projection) {
+    const params = {
+      RequestItems: {
+        'IndiaMartLeads': {
+          Keys: keys,
+          ProjectionExpression: projection
+        }
+      }
+    };
+    
+    return await this.dynamodb.batchGet(params).promise();
+  }
+  
+  // Implement pagination for large result sets
+  async paginatedQuery(params, limit = 100) {
+    const results = [];
+    let lastEvaluatedKey = null;
+    
+    do {
+      const queryParams = {
+        ...params,
+        Limit: limit,
+        ExclusiveStartKey: lastEvaluatedKey
+      };
+      
+      const result = await this.dynamodb.query(queryParams).promise();
+      results.push(...result.Items);
+      lastEvaluatedKey = result.LastEvaluatedKey;
+      
+    } while (lastEvaluatedKey && results.length < 1000); // Safety limit
+    
+    return results;
+  }
+}
+```
+
+### Query Optimization
+```javascript
+// Optimize common queries
+class QueryOptimizer {
+  // Use GSI for efficient queries
+  async getLeadsByCustomer(customerId, startDate, endDate) {
+    const params = {
+      TableName: 'IndiaMartLeads',
+      IndexName: 'GSI1',
+      KeyConditionExpression: 'GSI1PK = :customerId AND GSI1SK BETWEEN :startDate AND :endDate',
+      ExpressionAttributeValues: {
+        ':customerId': `CUSTOMER#${customerId}`,
+        ':startDate': startDate,
+        ':endDate': endDate
+      }
+    };
+    
+    return await this.dynamodb.query(params).promise();
+  }
+  
+  // Use parallel queries for multiple customers
+  async getLeadsForMultipleCustomers(customerIds, dateRange) {
+    const promises = customerIds.map(customerId => 
+      this.getLeadsByCustomer(customerId, dateRange.start, dateRange.end)
+    );
+    
+    const results = await Promise.all(promises);
+    return results.flat();
+  }
+}
+```
+
+## Memory Management
+
+### Memory Optimization
+```javascript
+// Optimize memory usage
+class MemoryOptimizer {
+  constructor() {
+    this.maxCacheSize = 1000;
+    this.cache = new Map();
+  }
+  
+  // Implement LRU cache
+  get(key) {
+    if (this.cache.has(key)) {
+      const value = this.cache.get(key);
+      this.cache.delete(key);
+      this.cache.set(key, value);
+      return value;
+    }
+    return null;
+  }
+  
+  set(key, value) {
+    if (this.cache.size >= this.maxCacheSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+  
+  // Clean up large objects
+  cleanup() {
+    this.cache.clear();
+    if (global.gc) {
+      global.gc();
+    }
+  }
+}
+```
+
+### Stream Processing
+```javascript
+// Process large datasets in streams
+class StreamProcessor {
+  constructor(batchSize = 100) {
+    this.batchSize = batchSize;
+  }
+  
+  async processLeads(leads, processor) {
+    const results = [];
+    
+    for (let i = 0; i < leads.length; i += this.batchSize) {
+      const batch = leads.slice(i, i + this.batchSize);
+      const batchResults = await Promise.all(
+        batch.map(lead => processor(lead))
+      );
+      results.push(...batchResults);
+      
+      // Allow event loop to process other tasks
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    
+    return results;
+  }
+}
+```
+
+## Network Optimization
+
+### Connection Pooling
+```javascript
+// Implement connection pooling
+class ConnectionPool {
+  constructor(maxConnections = 10) {
+    this.maxConnections = maxConnections;
+    this.connections = [];
+    this.waiting = [];
+  }
+  
+  async getConnection() {
+    if (this.connections.length > 0) {
+      return this.connections.pop();
+    }
+    
+    if (this.connections.length < this.maxConnections) {
+      return await this.createConnection();
+    }
+    
+    return new Promise(resolve => {
+      this.waiting.push(resolve);
+    });
+  }
+  
+  releaseConnection(connection) {
+    if (this.waiting.length > 0) {
+      const resolve = this.waiting.shift();
+      resolve(connection);
+    } else {
+      this.connections.push(connection);
+    }
+  }
+}
+```
+
+### Request Optimization
+```javascript
+// Optimize HTTP requests
+class RequestOptimizer {
+  constructor() {
+    this.agent = new https.Agent({
+      keepAlive: true,
+      maxSockets: 10,
+      maxFreeSockets: 5,
+      timeout: 30000
+    });
+  }
+  
+  async makeRequest(url, options = {}) {
+    const requestOptions = {
+      ...options,
+      agent: this.agent,
+      timeout: 30000,
+      headers: {
+        'Connection': 'keep-alive',
+        'User-Agent': 'IndiaMart-Client/1.0.0',
+        ...options.headers
+      }
+    };
+    
+    return await fetch(url, requestOptions);
+  }
+}
+```
+
+## Monitoring and Profiling
+
+### Performance Metrics
+```javascript
+// Track performance metrics
+class PerformanceMonitor {
+  constructor() {
+    this.metrics = {
+      apiCalls: 0,
+      avgResponseTime: 0,
+      errorRate: 0,
+      cacheHitRate: 0
+    };
+  }
+  
+  recordAPICall(duration, success) {
+    this.metrics.apiCalls++;
+    this.metrics.avgResponseTime = 
+      (this.metrics.avgResponseTime * (this.metrics.apiCalls - 1) + duration) / 
+      this.metrics.apiCalls;
+    
+    if (!success) {
+      this.metrics.errorRate = 
+        (this.metrics.errorRate * (this.metrics.apiCalls - 1) + 1) / 
+        this.metrics.apiCalls;
+    }
+  }
+  
+  recordCacheHit(hit) {
+    this.metrics.cacheHitRate = 
+      (this.metrics.cacheHitRate * (this.metrics.apiCalls - 1) + (hit ? 1 : 0)) / 
+      this.metrics.apiCalls;
+  }
+}
+```
+
+### Profiling
+```javascript
+// Simple profiling utility
+function profile(name, fn) {
+  return async function(...args) {
+    const start = process.hrtime.bigint();
+    try {
+      const result = await fn.apply(this, args);
+      const end = process.hrtime.bigint();
+      console.log(`${name} took ${Number(end - start) / 1000000}ms`);
+      return result;
+    } catch (error) {
+      const end = process.hrtime.bigint();
+      console.log(`${name} failed after ${Number(end - start) / 1000000}ms`);
+      throw error;
+    }
+  };
+}
+```
+
+## Best Practices
+
+1. **Use connection pooling** - Reuse HTTP connections
+2. **Implement caching** - Cache frequently accessed data
+3. **Optimize database queries** - Use indexes and projections
+4. **Process data in batches** - Avoid memory issues with large datasets
+5. **Monitor performance** - Track key metrics and set up alerts
+6. **Use streaming** - Process large datasets without loading everything into memory
+7. **Implement rate limiting** - Prevent API overload
+8. **Clean up resources** - Properly dispose of connections and objects

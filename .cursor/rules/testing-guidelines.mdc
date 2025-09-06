@@ -1,0 +1,107 @@
+---
+globs: tests/*.js,*.test.js,*.spec.js
+description: Testing guidelines and best practices
+---
+
+# Testing Guidelines
+
+## Test Structure
+
+### Unit Tests
+- Test individual functions and methods
+- Mock external dependencies
+- Use descriptive test names
+- Group related tests in describe blocks
+
+```javascript
+describe('IndiaMartClient', () => {
+  describe('formatTimestamp', () => {
+    it('should format Date object correctly in UTC', () => {
+      const date = new Date('2024-01-01T00:00:00.000Z');
+      const result = IndiaMartClient.formatTimestamp(date);
+      expect(result).toBe('01-01-2024 00:00:00');
+    });
+  });
+});
+```
+
+### Integration Tests
+- Test API interactions with real endpoints
+- Use test environment variables
+- Clean up test data after tests
+- Test error scenarios and edge cases
+
+### Compliance Tests
+- Test rate limiting behavior
+- Verify date format compliance
+- Test error handling for all API error codes
+- Validate data cleaning and processing
+
+## Test Data Management
+
+### Mock Data
+- Use realistic test data that matches IndiaMART API responses
+- Create reusable mock factories
+- Test both success and error scenarios
+- Include edge cases and boundary conditions
+
+### Test Environment
+- Use separate test environment variables
+- Implement test data cleanup
+- Use test-specific database tables
+- Mock external services when appropriate
+
+## Testing Patterns
+
+### Async Testing
+```javascript
+it('should handle async operations', async () => {
+  const result = await client.getLeads({
+    start_time: '01-01-2024',
+    end_time: '02-01-2024'
+  });
+  expect(result.success).toBe(true);
+});
+```
+
+### Error Testing
+```javascript
+it('should throw error for invalid date format', () => {
+  expect(() => {
+    IndiaMartClient.formatTimestamp('invalid-date');
+  }).toThrow('Invalid date for start_time/end_time');
+});
+```
+
+### Mock Testing
+```javascript
+it('should handle API errors gracefully', async () => {
+  // Mock API response
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: false,
+    status: 429,
+    json: () => Promise.resolve({
+      CODE: 'RATE_LIMIT_EXCEEDED',
+      MESSAGE: 'Too many requests'
+    })
+  });
+
+  await expect(client.getLeads({})).rejects.toThrow('Rate limit exceeded');
+});
+```
+
+## Test Coverage
+
+- Aim for 90%+ code coverage
+- Test all public methods and functions
+- Include error handling paths
+- Test edge cases and boundary conditions
+- Validate input/output data structures
+
+## Test Commands
+
+- `npm test` - Run all tests
+- `npm run test:compliance` - Run compliance tests
+- `npm run test:dates` - Run date format tests
+- `npm run test:errors` - Run error handling tests
+- `npm run test:response` - Run response processing tests

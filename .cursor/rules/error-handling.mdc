@@ -1,0 +1,294 @@
+---
+globs: *.js
+description: Error handling patterns and best practices
+---
+
+# Error Handling Guidelines
+
+## Error Class Hierarchy
+
+### Base Error Classes
+```javascript
+// Custom error base class
+class IndiaMartError extends Error {
+  constructor(code, message, originalError = null) {
+    super(message);
+    this.name = 'IndiaMartError';
+    this.code = code;
+    this.originalError = originalError;
+    this.timestamp = new Date().toISOString();
+  }
+}
+
+// Specific error types
+class APIError extends IndiaMartError {
+  constructor(code, message, statusCode, originalError) {
+    super(code, message, originalError);
+    this.name = 'APIError';
+    this.statusCode = statusCode;
+  }
+}
+
+class ValidationError extends IndiaMartError {
+  constructor(message, field = null) {
+    super('VALIDATION_ERROR', message);
+    this.name = 'ValidationError';
+    this.field = field;
+  }
+}
+```
+
+## IndiaMART API Error Handling
+
+### Error Classification
+```javascript
+const ERROR_TYPES = {
+  RATE_LIMIT_EXCEEDED: {
+    code: 'RATE_LIMIT_EXCEEDED',
+    retryable: true,
+    retryDelay: 15 * 60 * 1000, // 15 minutes
+    description: 'API rate limit exceeded'
+  },
+  INVALID_DATE_FORMAT: {
+    code: 'INVALID_DATE_FORMAT',
+    retryable: false,
+    description: 'Date format is incorrect'
+  },
+  INVALID_CRM_KEY: {
+    code: 'INVALID_CRM_KEY',
+    retryable: false,
+    description: 'CRM key is invalid or expired'
+  },
+  NO_DATA_FOUND: {
+    code: 'NO_DATA_FOUND',
+    retryable: false,
+    description: 'No leads found in specified time range'
+  }
+};
+```
+
+### Retry Logic
+```javascript
+async function retryWithBackoff(operation, maxRetries = 3) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      
+      if (!error.retryable || attempt === maxRetries) {
+        throw error;
+      }
+      
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+```
+
+## Error Handling Patterns
+
+### Try-Catch with Context
+```javascript
+async function fetchLeads(params) {
+  try {
+    const response = await makeAPICall(params);
+    return processResponse(response);
+  } catch (error) {
+    // Add context to error
+    error.context = {
+      operation: 'fetchLeads',
+      params: params,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Log error with context
+    console.error('Failed to fetch leads:', {
+      error: error.message,
+      context: error.context
+    });
+    
+    throw error;
+  }
+}
+```
+
+### Error Recovery
+```javascript
+async function handleAPIError(error) {
+  switch (error.code) {
+    case 'RATE_LIMIT_EXCEEDED':
+      // Wait and retry
+      await waitForRateLimitReset();
+      return retryOperation();
+      
+    case 'INVALID_CRM_KEY':
+      // Refresh CRM key
+      await refreshCRMKey();
+      return retryOperation();
+      
+    case 'NETWORK_ERROR':
+      // Check network connectivity
+      if (await checkNetworkConnectivity()) {
+        return retryOperation();
+      }
+      throw new Error('Network connectivity issues');
+      
+    default:
+      // Log and rethrow
+      console.error('Unhandled API error:', error);
+      throw error;
+  }
+}
+```
+
+## Logging and Monitoring
+
+### Error Logging
+```javascript
+function logError(error, context = {}) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    level: 'error',
+    error: {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    },
+    context: context
+  };
+  
+  console.error(JSON.stringify(logEntry));
+  
+  // Send to monitoring service
+  if (process.env.NODE_ENV === 'production') {
+    sendToMonitoring(logEntry);
+  }
+}
+```
+
+### Error Metrics
+```javascript
+const errorMetrics = {
+  totalErrors: 0,
+  errorsByType: {},
+  errorsByOperation: {},
+  lastErrorTime: null
+};
+
+function trackError(error, operation) {
+  errorMetrics.totalErrors++;
+  errorMetrics.errorsByType[error.code] = (errorMetrics.errorsByType[error.code] || 0) + 1;
+  errorMetrics.errorsByOperation[operation] = (errorMetrics.errorsByOperation[operation] || 0) + 1;
+  errorMetrics.lastErrorTime = new Date().toISOString();
+}
+```
+
+## Validation Error Handling
+
+### Input Validation
+```javascript
+function validateLeadParams(params) {
+  const errors = [];
+  
+  if (!params.start_time) {
+    errors.push('start_time is required');
+  } else if (!isValidDate(params.start_time)) {
+    errors.push('start_time must be a valid date');
+  }
+  
+  if (!params.end_time) {
+    errors.push('end_time is required');
+  } else if (!isValidDate(params.end_time)) {
+    errors.push('end_time must be a valid date');
+  }
+  
+  if (errors.length > 0) {
+    throw new ValidationError(errors.join(', '));
+  }
+}
+```
+
+### Data Validation
+```javascript
+function validateLeadData(lead) {
+  const requiredFields = ['UNIQUE_QUERY_ID', 'QUERY_MESSAGE', 'SENDER_NAME'];
+  const missingFields = requiredFields.filter(field => !lead[field]);
+  
+  if (missingFields.length > 0) {
+    throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
+  }
+  
+  // Validate data types and formats
+  if (typeof lead.UNIQUE_QUERY_ID !== 'string') {
+    throw new ValidationError('UNIQUE_QUERY_ID must be a string');
+  }
+  
+  return true;
+}
+```
+
+## Error Recovery Strategies
+
+### Circuit Breaker Pattern
+```javascript
+class CircuitBreaker {
+  constructor(threshold = 5, timeout = 60000) {
+    this.threshold = threshold;
+    this.timeout = timeout;
+    this.failureCount = 0;
+    this.lastFailureTime = null;
+    this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+  }
+  
+  async execute(operation) {
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime > this.timeout) {
+        this.state = 'HALF_OPEN';
+      } else {
+        throw new Error('Circuit breaker is OPEN');
+      }
+    }
+    
+    try {
+      const result = await operation();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+  
+  onSuccess() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+  
+  onFailure() {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failureCount >= this.threshold) {
+      this.state = 'OPEN';
+    }
+  }
+}
+```
+
+## Best Practices
+
+1. **Always handle errors gracefully** - Never let unhandled errors crash the application
+2. **Provide meaningful error messages** - Include context and actionable information
+3. **Log errors with sufficient detail** - Include stack traces, context, and timestamps
+4. **Implement retry logic** - For transient errors with exponential backoff
+5. **Use circuit breakers** - Prevent cascading failures
+6. **Monitor error rates** - Set up alerts for high error rates
+7. **Test error scenarios** - Include error handling in your test suite
+8. **Document error codes** - Maintain a clear error code reference

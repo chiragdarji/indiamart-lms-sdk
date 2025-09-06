@@ -1,0 +1,70 @@
+{
+  "name": "indiamart-lms-sdk",
+  "version": "1.0.0",
+  "description": "Simple and powerful SDK for IndiaMART Lead Management System (LMS) - Get leads with just your CRM key",
+  "main": "src/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node examples/simple-usage.js",
+    "start:advanced": "node examples/advanced-usage.js",
+    "start:logging": "node examples/logging-and-compliance.js",
+    "start:paths": "node examples/configurable-paths.js",
+    "dev": "node --watch examples/simple-usage.js",
+    "test": "node tests/test.js",
+    "test:all": "npm run test && npm run test:errors && npm run test:dates && npm run test:compliance && npm run test:response",
+    "test:errors": "node tests/error-test.js",
+    "test:dates": "node tests/date-format-test.js",
+    "test:compliance": "node tests/compliance-test.js",
+    "test:response": "node tests/response-example.js",
+    "example": "node examples/simple-usage.js",
+    "example:advanced": "node examples/advanced-usage.js",
+    "example:logging": "node examples/logging-and-compliance.js",
+    "example:paths": "node examples/configurable-paths.js",
+    "example:secure": "node examples/secure-usage.js",
+    "test:client": "node examples/simple-client-test.js"
+  },
+  "keywords": [
+    "indiamart",
+    "lms",
+    "crm",
+    "leads",
+    "api",
+    "sdk",
+    "integration",
+    "b2b",
+    "lead-management",
+    "sales"
+  ],
+  "author": "IndiaMART SDK Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/indiamart-sdk/indiamart-lms-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/indiamart-sdk/indiamart-lms-sdk/issues"
+  },
+  "homepage": "https://github.com/indiamart-sdk/indiamart-lms-sdk#readme",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "files": [
+    "src/",
+    "examples/",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./src/index.js"
+    },
+    "./sdk": {
+      "import": "./src/sdk.js",
+      "require": "./src/sdk.js"
+    }
+  }
+}

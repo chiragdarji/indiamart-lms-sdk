@@ -1,0 +1,59 @@
+---
+globs: *.js
+description: Code style and formatting guidelines
+---
+
+# Code Style Guidelines
+
+## JavaScript/Node.js Standards
+
+- Use ES6+ modules with `import/export` syntax
+- Prefer `const` and `let` over `var`
+- Use arrow functions for callbacks and short functions
+- Use template literals for string interpolation
+- Use destructuring for object/array assignments
+
+## Error Handling
+
+- Always use try-catch blocks for async operations
+- Throw meaningful error messages with context
+- Use custom error classes for different error types
+- Log errors with appropriate levels (error, warn, info)
+
+```javascript
+try {
+  const result = await apiCall();
+  return result;
+} catch (error) {
+  console.error('API call failed:', error.message);
+  throw new IndiaMartError('API_CALL_FAILED', error.message, error);
+}
+```
+
+## Async/Await Patterns
+
+- Prefer async/await over Promise chains
+- Use Promise.all() for parallel operations
+- Handle timeouts with AbortController
+- Implement proper cleanup in finally blocks
+
+## Naming Conventions
+
+- Use camelCase for variables and functions
+- Use PascalCase for classes and constructors
+- Use UPPER_SNAKE_CASE for constants
+- Use descriptive names that explain intent
+
+## Code Organization
+
+- Group related functions together
+- Use JSDoc comments for public APIs
+- Keep functions small and focused (max 50 lines)
+- Use early returns to reduce nesting
+
+## IndiaMART Specific
+
+- Always use IST timezone for timestamps
+- Implement proper date formatting utilities
+- Use consistent error handling patterns
+- Follow API compliance requirements
