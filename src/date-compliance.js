@@ -209,8 +209,8 @@ export class DateComplianceManager {
       const monthIndex = istTime.getUTCMonth();
       return `${pad(getD(d))}-${MMM[monthIndex]}-${getY(d)}`;
     } else {
-      // Format: DD-MM-YYYYHH:MM:SS (e.g., 25-01-202216:30:00)
-      return `${pad(getD(d))}-${pad(getM(d))}-${getY(d)}${pad(getH(d))}:${pad(getMin(d))}:${pad(getS(d))}`;
+      // Format: DD-MM-YYYY HH:MM:SS (e.g., 25-01-2022 16:30:00)
+      return `${pad(getD(d))}-${pad(getM(d))}-${getY(d)} ${pad(getH(d))}:${pad(getMin(d))}:${pad(getS(d))}`;
     }
   }
 

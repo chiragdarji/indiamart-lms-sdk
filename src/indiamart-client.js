@@ -126,16 +126,27 @@ export class IndiaMartClient {
         });
 
         const responseTime = Date.now() - startTimeMs;
+        
+        // Parse the JSON response
+        let responseData;
+        try {
+          responseData = await response.json();
+        } catch (parseError) {
+          console.error('❌ Failed to parse JSON response:', parseError.message);
+          throw new IndiaMartError('Invalid JSON response from API', 'INVALID_RESPONSE', response.status);
+        }
+        
         console.log(`📡 Raw API Response:`, {
           status: response.status,
           statusText: response.statusText,
           headers: response.headers ? Object.fromEntries(response.headers.entries()) : 'No headers',
           dataLength: response.headers?.get('content-length') || 'Unknown',
-          hasData: response.body !== null
+          hasData: response.body !== null,
+          responseData: responseData
         });
 
         // Process the response
-        const result = await this.responseHandler.processResponse(response, responseTime);
+        const result = this.responseHandler.processResponse(responseData);
         console.log(`🔍 Response Processing:`, {
           success: result.success,
           hasData: !!result.data,

@@ -63,6 +63,8 @@ export class IndiaMartResponseHandler {
       message: response.MESSAGE || '',
       totalRecords: response.TOTAL_RECORDS || 0,
       leads: [],
+      error: response.CODE !== 200 ? response.MESSAGE || 'API call failed' : null,
+      statusCode: response.CODE,
       metadata: {
         leadTypes: {},
         countries: new Set(),

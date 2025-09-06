@@ -752,7 +752,7 @@ export class IndiaMartSDK {
           },
           rateLimiter: {
             status: rateLimitStatus.isBlocked ? 'blocked' : 'active',
-            status: rateLimitStatus
+            details: rateLimitStatus
           },
           logger: {
             status: 'active'
