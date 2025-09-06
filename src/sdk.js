@@ -737,6 +737,22 @@ export class IndiaMartSDK {
    * Get SDK health status
    * @returns {Promise<object>} Health status
    */
+  /**
+   * Clean up object values to ensure they're serializable
+   * @param {any} value - Value to clean
+   * @returns {any} Cleaned value
+   */
+  cleanValue(value) {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      // Convert objects to strings or extract meaningful values
+      if (value instanceof Date) return value.toISOString();
+      if (value.toString && value.toString() !== '[object Object]') return value.toString();
+      return 'Object';
+    }
+    return value;
+  }
+
   async getHealthStatus() {
     try {
       const cacheStats = this.cache.getStats();
@@ -750,20 +766,23 @@ export class IndiaMartSDK {
         components: {
           cache: {
             status: 'active',
-            hitRate: `${cacheStats.hitRate}%`,
-            missRate: `${cacheStats.missRate}%`,
-            size: cacheStats.size,
-            totalRequests: cacheStats.totalRequests,
-            evictions: cacheStats.evictions,
-            memoryUsage: `${cacheStats.memoryUsage} MB`
+            hitRate: `${this.cleanValue(cacheStats.hitRate)}%`,
+            missRate: `${this.cleanValue(cacheStats.missRate)}%`,
+            size: this.cleanValue(cacheStats.size),
+            totalRequests: this.cleanValue(cacheStats.totalRequests),
+            evictions: this.cleanValue(cacheStats.evictions),
+            memoryUsage: `${this.cleanValue(cacheStats.memoryUsage)} MB`
           },
           rateLimiter: {
             status: rateLimitStatus.isBlocked ? 'blocked' : 'active',
-            callsPerMinute: rateLimitStatus.callsPerMinute || 0,
-            callsPerHour: rateLimitStatus.callsPerHour || 0,
-            isBlocked: rateLimitStatus.isBlocked || false,
-            retryAfter: rateLimitStatus.retryAfter || 0,
-            callsRemaining: (rateLimitStatus.callsPerHour || 0) - (rateLimitStatus.callsPerHour || 0)
+            callsPerMinute: this.cleanValue(rateLimitStatus.callsPerMinute) || 0,
+            callsPerHour: this.cleanValue(rateLimitStatus.callsPerHour) || 0,
+            isBlocked: this.cleanValue(rateLimitStatus.isBlocked) || false,
+            retryAfter: this.cleanValue(rateLimitStatus.retryAfter) || 0,
+            callsRemaining: Math.max(0, (this.cleanValue(rateLimitStatus.hourLimit) || 0) - (this.cleanValue(rateLimitStatus.callsPerHour) || 0)),
+            minuteLimit: this.cleanValue(rateLimitStatus.minuteLimit) || 0,
+            hourLimit: this.cleanValue(rateLimitStatus.hourLimit) || 0,
+            totalCallsToday: this.cleanValue(rateLimitStatus.totalCallsToday) || 0
           },
           logger: {
             status: 'active',
@@ -771,7 +790,7 @@ export class IndiaMartSDK {
           },
           client: {
             status: this.client ? 'initialized' : 'not_initialized',
-            baseUrl: this.client?.baseUrl || 'not_set'
+            baseUrl: this.cleanValue(this.client?.baseUrl) || 'not_set'
           }
         }
       };
@@ -780,7 +799,15 @@ export class IndiaMartSDK {
       return {
         success: false,
         status: 'unhealthy',
-        error: error.message
+        timestamp: new Date().toISOString(),
+        version: '1.0.2',
+        error: this.cleanValue(error.message) || 'Unknown error',
+        components: {
+          cache: { status: 'error', error: 'Health check failed' },
+          rateLimiter: { status: 'error', error: 'Health check failed' },
+          logger: { status: 'error', error: 'Health check failed' },
+          client: { status: 'error', error: 'Health check failed' }
+        }
       };
     }
   }
