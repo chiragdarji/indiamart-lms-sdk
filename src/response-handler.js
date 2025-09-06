@@ -56,15 +56,21 @@ export class IndiaMartResponseHandler {
       throw new Error('Invalid response format');
     }
 
+    // Handle different possible response structures
+    const code = response.CODE || response.code || response.status || 500;
+    const status = response.STATUS || response.status || response.statusText || 'UNKNOWN';
+    const message = response.MESSAGE || response.message || response.error || '';
+    const totalRecords = response.TOTAL_RECORDS || response.total_records || response.totalRecords || 0;
+    
     const processed = {
-      success: response.CODE === 200 && response.STATUS === 'SUCCESS',
-      code: response.CODE,
-      status: response.STATUS,
-      message: response.MESSAGE || '',
-      totalRecords: response.TOTAL_RECORDS || 0,
+      success: code === 200 && (status === 'SUCCESS' || status === 'OK'),
+      code: code,
+      status: status,
+      message: message,
+      totalRecords: totalRecords,
       leads: [],
-      error: response.CODE !== 200 ? response.MESSAGE || 'API call failed' : null,
-      statusCode: response.CODE,
+      error: code !== 200 ? message || 'API call failed' : null,
+      statusCode: code,
       metadata: {
         leadTypes: {},
         countries: new Set(),
@@ -74,8 +80,8 @@ export class IndiaMartResponseHandler {
       }
     };
 
-    // Process leads if present - check both RESPONSE and leads arrays
-    const leadsArray = response.RESPONSE || response.leads;
+    // Process leads if present - check multiple possible field names
+    const leadsArray = response.RESPONSE || response.leads || response.data || response.results || [];
     
     console.log(`🔍 Response Handler - Processing leads:`, {
       hasResponse: !!response.RESPONSE,

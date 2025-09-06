@@ -745,20 +745,31 @@ export class IndiaMartSDK {
       return {
         success: true,
         status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: '1.0.1',
         components: {
           cache: {
             status: 'active',
-            stats: cacheStats
+            hitRate: `${cacheStats.hitRate}%`,
+            missRate: `${(100 - cacheStats.hitRate).toFixed(2)}%`,
+            size: cacheStats.size,
+            totalRequests: cacheStats.totalRequests,
+            evictions: cacheStats.evictions
           },
           rateLimiter: {
             status: rateLimitStatus.isBlocked ? 'blocked' : 'active',
-            details: rateLimitStatus
+            callsPerMinute: rateLimitStatus.callsPerMinute,
+            callsPerHour: rateLimitStatus.callsPerHour,
+            isBlocked: rateLimitStatus.isBlocked,
+            retryAfter: rateLimitStatus.retryAfter
           },
           logger: {
-            status: 'active'
+            status: 'active',
+            logLevel: 'INFO'
           },
           client: {
-            status: this.client ? 'initialized' : 'not_initialized'
+            status: this.client ? 'initialized' : 'not_initialized',
+            baseUrl: this.client?.baseUrl || 'not_set'
           }
         }
       };

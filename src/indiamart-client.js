@@ -186,7 +186,7 @@ export class IndiaMartClient {
 
           // Check if this is a retryable error
         if (this.errorHandler.isRetryableError(result.statusCode, result.error)) {
-          attemptCount++;
+            attemptCount++;
           if (attemptCount < maxRetries) {
             const delay = this.errorHandler.getRetryDelay({ code: result.statusCode }, attemptCount);
             console.log(`⏳ Retrying in ${delay}ms... (attempt ${attemptCount + 1}/${maxRetries})`);
@@ -195,7 +195,7 @@ export class IndiaMartClient {
           }
         }
 
-          throw new IndiaMartError(result.error, result.statusCode);
+          throw new IndiaMartError(result.error || 'API call failed', result.statusCode || 500, result.status || 'ERROR');
         }
       } catch (error) {
         const responseTime = Date.now() - startTimeMs;
@@ -206,18 +206,25 @@ export class IndiaMartClient {
           throw error;
         }
 
-        if (this.errorHandler.isRetryableError(error.statusCode, error.message)) {
+        const errorCode = error.code || error.statusCode || 'UNKNOWN_ERROR';
+        const errorStatus = error.status || 'ERROR';
+        
+        if (this.errorHandler.isRetryableError(error.statusCode || errorCode, error.message)) {
           attemptCount++;
           if (attemptCount < maxRetries) {
-            const delay = this.errorHandler.getRetryDelay({ code: error.statusCode }, attemptCount);
+            const delay = this.errorHandler.getRetryDelay({ code: errorCode }, attemptCount);
             console.log(`⏳ Retrying in ${delay}ms... (attempt ${attemptCount + 1}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
         }
 
-        console.log(`💡 Suggestion: ${this.errorHandler.getSuggestion(error.code, error.message)}`);
-        console.log(`❌ Not retrying: ${this.errorHandler.getSuggestion(error.code, error.message)}`);
+        console.log(`💡 Suggestion: ${this.errorHandler.getSuggestion(errorCode, error.message)}`);
+        console.log(`❌ Not retrying: ${this.errorHandler.getSuggestion(errorCode, error.message)}`);
+        
+        // Ensure error has proper structure
+        if (!error.code) error.code = errorCode;
+        if (!error.status) error.status = errorStatus;
         throw error;
       }
     }

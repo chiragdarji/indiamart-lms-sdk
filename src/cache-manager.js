@@ -174,11 +174,21 @@ export class CacheManager {
   getStats() {
     const totalRequests = this.stats.hits + this.stats.misses;
     const hitRate = totalRequests > 0 ? (this.stats.hits / totalRequests) * 100 : 0;
+    const missRate = totalRequests > 0 ? (this.stats.misses / totalRequests) * 100 : 0;
+    
+    // Ensure all values are valid numbers
+    const safeHitRate = isNaN(hitRate) ? 0 : Math.round(hitRate * 100) / 100;
+    const safeMissRate = isNaN(missRate) ? 0 : Math.round(missRate * 100) / 100;
+    const safeTotalRequests = isNaN(totalRequests) ? 0 : totalRequests;
 
     return {
-      ...this.stats,
-      hitRate: Math.round(hitRate * 100) / 100,
-      totalRequests
+      hits: this.stats.hits || 0,
+      misses: this.stats.misses || 0,
+      evictions: this.stats.evictions || 0,
+      size: this.stats.size || 0,
+      hitRate: safeHitRate,
+      missRate: safeMissRate,
+      totalRequests: safeTotalRequests
     };
   }
 
