@@ -746,22 +746,24 @@ export class IndiaMartSDK {
         success: true,
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        version: '1.0.1',
+        version: '1.0.2',
         components: {
           cache: {
             status: 'active',
             hitRate: `${cacheStats.hitRate}%`,
-            missRate: `${(100 - cacheStats.hitRate).toFixed(2)}%`,
+            missRate: `${cacheStats.missRate}%`,
             size: cacheStats.size,
             totalRequests: cacheStats.totalRequests,
-            evictions: cacheStats.evictions
+            evictions: cacheStats.evictions,
+            memoryUsage: `${cacheStats.memoryUsage} MB`
           },
           rateLimiter: {
             status: rateLimitStatus.isBlocked ? 'blocked' : 'active',
-            callsPerMinute: rateLimitStatus.callsPerMinute,
-            callsPerHour: rateLimitStatus.callsPerHour,
-            isBlocked: rateLimitStatus.isBlocked,
-            retryAfter: rateLimitStatus.retryAfter
+            callsPerMinute: rateLimitStatus.callsPerMinute || 0,
+            callsPerHour: rateLimitStatus.callsPerHour || 0,
+            isBlocked: rateLimitStatus.isBlocked || false,
+            retryAfter: rateLimitStatus.retryAfter || 0,
+            callsRemaining: (rateLimitStatus.callsPerHour || 0) - (rateLimitStatus.callsPerHour || 0)
           },
           logger: {
             status: 'active',

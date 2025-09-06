@@ -188,8 +188,25 @@ export class CacheManager {
       size: this.stats.size || 0,
       hitRate: safeHitRate,
       missRate: safeMissRate,
-      totalRequests: safeTotalRequests
+      totalRequests: safeTotalRequests,
+      memoryUsage: this.calculateMemoryUsage()
     };
+  }
+
+  /**
+   * Calculate memory usage in MB
+   * @returns {number} Memory usage in MB
+   */
+  calculateMemoryUsage() {
+    try {
+      if (process.memoryUsage) {
+        const memUsage = process.memoryUsage();
+        return Math.round(memUsage.heapUsed / 1024 / 1024 * 100) / 100; // MB
+      }
+      return 0;
+    } catch (error) {
+      return 0;
+    }
   }
 
   /**
