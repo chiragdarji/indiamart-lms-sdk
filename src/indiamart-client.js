@@ -82,7 +82,7 @@ export class IndiaMartClient {
 
     // Validate required parameters
     if (!startTime || !endTime) {
-      throw new IndiaMartError('startTime and endTime are required', 'INVALID_PARAMETERS');
+      throw new IndiaMartError('startTime and endTime are required', 'INVALID_PARAMETERS', 'ERROR');
     }
 
     // Skip date format validation as it will be handled by date compliance check
@@ -90,7 +90,7 @@ export class IndiaMartClient {
     // Check date compliance
     const complianceCheck = this.complianceManager.validateDateRange(startTime, endTime);
     if (!complianceCheck.isValid) {
-      throw new IndiaMartError(`Date compliance error: ${complianceCheck.errors.join(', ')}`, 'DATE_COMPLIANCE_ERROR');
+      throw new IndiaMartError(`Date compliance error: ${complianceCheck.errors.join(', ')}`, 'DATE_COMPLIANCE_ERROR', 'ERROR');
     }
 
     const startTimeMs = Date.now();
@@ -133,7 +133,7 @@ export class IndiaMartClient {
           responseData = await response.json();
         } catch (parseError) {
           console.error('❌ Failed to parse JSON response:', parseError.message);
-          throw new IndiaMartError('Invalid JSON response from API', 'INVALID_RESPONSE', response.status);
+          throw new IndiaMartError('Invalid JSON response from API', 'INVALID_RESPONSE', 'ERROR');
         }
         
         console.log(`📡 Raw API Response:`, {
@@ -229,7 +229,7 @@ export class IndiaMartClient {
       }
     }
 
-    throw new IndiaMartError(`Failed after ${maxRetries} attempts`, 'MAX_RETRIES_EXCEEDED');
+    throw new IndiaMartError(`Failed after ${maxRetries} attempts`, 'MAX_RETRIES_EXCEEDED', 'ERROR');
   }
 
   /**
